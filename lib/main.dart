@@ -3,7 +3,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:simple_pip_mode/simple_pip_mode.dart';
+import 'package:floating/floating.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,20 +37,23 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final TextEditingController _urlController = TextEditingController(
     text: 'http://datahub11.com/live/76446885500/86436775522/9399.ts',
   );
   late final Player player = Player();
   late final VideoController controller = VideoController(player);
+  late final floating = Floating();
 
   bool _isPlaying = false;
   String? _error;
   double _volume = 100.0;
+  bool _isPipMode = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     player.stream.error.listen((error) {
       setState(() {
         _error = error.toString();
@@ -65,9 +68,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     player.dispose();
     _urlController.dispose();
+    floating.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
+      // Logic for auto-PiP if needed
+    }
   }
 
   Future<void> _playUrl() async {
@@ -89,9 +101,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _togglePip() async {
-    final bool isPipAvailable = await SimplePipMode.isPipAvailable;
-    if (isPipAvailable) {
-      SimplePipMode.enterPipMode();
+    final status = await floating.isAvailable;
+    if (status) {
+      await floating.enable(aspectRatio: const Rational(16, 9));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('PiP is not available on this device')),
@@ -101,11 +113,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return PipWidget(
-      pipChild: Scaffold(
-        backgroundColor: Colors.black,
-        body: Video(controller: controller, controls: NoVideoControls),
-      ),
+    return PiPBuilder(
+      builder: (context, isPip, child) {
+        _isPipMode = isPip;
+        if (isPip) {
+          return Scaffold(
+            backgroundColor: Colors.black,
+            body: Video(controller: controller, controls: NoVideoControls),
+          );
+        }
+        return child!;
+      },
       child: Scaffold(
         backgroundColor: Colors.black,
         body: Stack(
@@ -162,7 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ],
                               ),
                               child: const Icon(Icons.play_circle_filled_rounded, size: 32, color: Colors.white),
-                            ).animate().scale(duration: 400.ms, curve: Curves.backOut),
+                            ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),
                             const SizedBox(width: 16),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,

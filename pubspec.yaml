@@ -39,7 +39,7 @@ dependencies:
   media_kit_libs_video: ^1.0.7
   google_fonts: ^8.1.0
   flutter_animate: ^4.5.2
-  simple_pip_mode: ^1.1.0
+  floating: ^6.0.0
 
 dev_dependencies:
   flutter_test:
