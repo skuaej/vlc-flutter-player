@@ -181,9 +181,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           if (_isPlaying)
                             IconButton(
                               onPressed: () {
-                                PIPView.of(context)?.presentPipHighlight();
-                                // Simple way to trigger PipView's floating mode
-                                // For pip_view, we usually push a new screen or use its internal state
+                                // For pip_view, we enter PiP by pushing the background content
+                                // and keeping the player in the floating window.
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
                                     builder: (context) => PIPView(
@@ -195,6 +194,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 );
                               },
+
                               icon: const Icon(Icons.picture_in_picture_alt_rounded, color: Colors.white),
                               tooltip: 'Enter PiP Mode',
                             ),
